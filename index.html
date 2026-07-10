@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELETRANS — Sistema de Gestão Interna</title>
+    <!-- Tipografia moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js via CDN (usado no perfil Administração) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- ============================================================
+         TELA GLOBAL DE LOGIN
+         ============================================================ -->
+    <section id="login-screen" class="login-screen">
+        <div class="login-card">
+            <!-- Logo institucional recriada em CSS -->
+            <div class="brand brand-login">
+                <span class="brand-word">ELETRANS</span>
+                <span class="brand-bar"></span>
+                <span class="brand-sub">Automação e Elétrica Industrial</span>
+            </div>
+
+            <form id="login-form" autocomplete="off">
+                <label for="login-user">Usuário</label>
+                <input type="text" id="login-user" placeholder="seu.usuario">
+                <label for="login-pass">Senha</label>
+                <input type="password" id="login-pass" placeholder="••••••••">
+                <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            </form>
+
+            <div class="login-divider"><span>acesso rápido — demonstração</span></div>
+
+            <div class="quick-login-grid">
+                <button class="quick-btn" data-perfil="operacional">
+                    <span class="quick-icon qi-blue">🔧</span>
+                    <span>Operacional</span>
+                    <small>Eletricistas e Ajudantes</small>
+                </button>
+                <button class="quick-btn" data-perfil="almoxarifado">
+                    <span class="quick-icon qi-yellow">📦</span>
+                    <span>Almoxarifado</span>
+                    <small>Estoque e Ferramentas</small>
+                </button>
+                <button class="quick-btn" data-perfil="supervisao">
+                    <span class="quick-icon qi-green">📋</span>
+                    <span>Supervisão</span>
+                    <small>Técnico de Segurança</small>
+                </button>
+                <button class="quick-btn" data-perfil="admin">
+                    <span class="quick-icon qi-red">📈</span>
+                    <span>Administração</span>
+                    <small>Sócios e RH</small>
+                </button>
+            </div>
+        </div>
+        <footer class="login-footer">© 2026 ELETRANS Automação e Elétrica Industrial · Araraquara-SP</footer>
+    </section>
+
+    <!-- ============================================================
+         SHELL DA APLICAÇÃO (SPA)
+         ============================================================ -->
+    <div id="app" class="app hidden">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand brand-sm">
+                    <span class="brand-word">ELETRANS</span>
+                    <span class="brand-bar"></span>
+                </div>
+            </div>
+            <div class="sidebar-user">
+                <div class="avatar" id="user-avatar">?</div>
+                <div>
+                    <div class="user-name" id="user-name">—</div>
+                    <div class="user-role" id="user-role">—</div>
+                </div>
+            </div>
+            <nav id="sidebar-nav" class="sidebar-nav">
+                <!-- Itens de menu injetados via JS conforme o perfil -->
+            </nav>
+            <button id="btn-logout" class="btn-logout">
+                <span>⏻</span> Sair do sistema
+            </button>
+        </aside>
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- ÁREA PRINCIPAL -->
+        <div class="main-area">
+            <header class="topbar">
+                <button id="btn-menu" class="btn-menu" aria-label="Abrir menu">☰</button>
+                <h2 id="topbar-title">Dashboard</h2>
+                <span class="topbar-date" id="topbar-date"></span>
+            </header>
+            <main id="view-container" class="view-container">
+                <!-- Conteúdo das telas renderizado via JS -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         MODAL GENÉRICO + TOASTS
+         ============================================================ -->
+    <div id="modal-root" class="modal-root hidden">
+        <div class="modal-backdrop"></div>
+        <div id="modal-box" class="modal-box"><!-- conteúdo via JS --></div>
+    </div>
+    <div id="toast-root" class="toast-root"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
