@@ -220,6 +220,24 @@ const statCard = (cls, icon, label, value, hint = '') => `
         </div>
     </div>`;
 
+/* --- Tabelas responsivas ------------------------------------------
+   No celular (≤640px) as tabelas viram cartões empilhados: cada <td>
+   ganha um data-label com o texto do cabeçalho correspondente, que o
+   CSS exibe como rótulo. Chamada após toda renderização de tabela. */
+function prepararTabelasResponsivas() {
+    document.querySelectorAll('#view-container table').forEach(tabela => {
+        tabela.classList.add('resp-table');
+        const cabecalhos = [...tabela.querySelectorAll('thead th')].map(th => th.textContent.trim());
+        tabela.querySelectorAll('tbody tr').forEach(tr => {
+            [...tr.children].forEach((td, i) => {
+                if (cabecalhos[i] && td.textContent.trim() !== '' && !td.hasAttribute('data-label')) {
+                    td.setAttribute('data-label', cabecalhos[i]);
+                }
+            });
+        });
+    });
+}
+
 /* --- Modal genérico --------------------------------------------- */
 function openModal(html) {
     $('#modal-box').innerHTML = html;
@@ -410,6 +428,7 @@ function navigate(viewId) {
         'adm-documentos': hookAdmDocumentos, 'adm-relatorios': hookAdmRelatorios
     };
     if (afterRender[viewId]) afterRender[viewId]();
+    prepararTabelasResponsivas();
     window.scrollTo(0, 0);
 }
 
@@ -776,6 +795,7 @@ function renderTbodyEstoque() {
         b.addEventListener('click', () => receberDevolucao(b.dataset.devolver)));
     document.querySelectorAll('[data-excluir-item]').forEach(b =>
         b.addEventListener('click', () => confirmarExclusaoItem(b.dataset.excluirItem)));
+    prepararTabelasResponsivas();
 }
 
 function hookAlmEstoque() {
@@ -920,6 +940,7 @@ function renderTbodyPedidos() {
         b.addEventListener('click', () => decidirPedido(parseInt(b.dataset.aprovar, 10), 'aprovado')));
     document.querySelectorAll('[data-negar]').forEach(b =>
         b.addEventListener('click', () => decidirPedido(parseInt(b.dataset.negar, 10), 'negado')));
+    prepararTabelasResponsivas();
 }
 
 function hookAlmPedidos() {
@@ -1008,6 +1029,7 @@ function aplicarFiltroRastreio() {
         return okObra && okTermo;
     });
     $('#tbody-rastreio').innerHTML = linhasRastreio(filtradas);
+    prepararTabelasResponsivas();
 }
 function hookAlmRastreio() {
     $('#busca-rastreio').addEventListener('input', (e) => {
@@ -1088,7 +1110,7 @@ function viewSupModelos() {
             <div><h3>Modelos Prontos — APR, RDO e Segurança</h3>
             <div class="panel-sub">Baixe o modelo em PDF e edite no Word/Excel conforme a atividade</div></div>
         </div>
-        <div class="gallery-grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+        <div class="gallery-grid" style="grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))">
             ${DB.modelosDocumentos.map(m => `
             <div class="doc-card">
                 <div class="doc-icon">${m.icon}</div>
@@ -1313,6 +1335,7 @@ function renderTbodyFuncionarios(termo = '') {
         b.addEventListener('click', () => abrirModalFuncionario(parseInt(b.dataset.editar, 10))));
     document.querySelectorAll('[data-demitir]').forEach(b =>
         b.addEventListener('click', () => confirmarDemissao(parseInt(b.dataset.demitir, 10))));
+    prepararTabelasResponsivas();
 }
 function hookAdmFuncionarios() {
     renderTbodyFuncionarios();
@@ -1440,6 +1463,7 @@ function renderTbodyDocs(tipo = 'todos') {
             ]);
             toast(`${d.id} baixado em PDF.`, 'success');
         }));
+    prepararTabelasResponsivas();
 }
 function hookAdmDocumentos() {
     renderTbodyDocs();
