@@ -27,7 +27,7 @@ const DB = {
 
     obras: [
         { id: 1, nome: 'Sylvamo',     cliente: 'Sylvamo do Brasil',      cidade: 'Luiz Antônio-SP', orcamento: 230000, custoTotal: 182500, progresso: 78, inicio: '2026-02-10', prazo: '2026-09-30', responsavelId: 8, status: 'em-andamento' },
-        { id: 2, nome: 'Raízen',      cliente: 'Raízen Energia',         cidade: 'Guariba-SP',      orcamento: 260000, custoTotal: 245800, progresso: 91, inicio: '2025-11-03', prazo: '2026-08-15', responsavelId: 7, status: 'em-andamento' },
+        { id: 2, nome: 'Raízen',      cliente: 'Raízen Energia',         cidade: 'Guariba-SP',      orcamento: 260000, custoTotal: 271200, progresso: 91, inicio: '2025-11-03', prazo: '2026-08-15', responsavelId: 7, status: 'em-andamento' },
         { id: 3, nome: 'Piracanjuba', cliente: 'Laticínios Piracanjuba', cidade: 'Bela Vista-GO',   orcamento: 180000, custoTotal: 97300,  progresso: 42, inicio: '2026-04-01', prazo: '2026-12-20', responsavelId: 6, status: 'em-andamento' }
     ],
 
@@ -421,8 +421,8 @@ function navigate(viewId) {
     const afterRender = {
         'op-home': hookOpHome, 'op-pedido': hookOpPedido,
         'op-equipamentos': hookOpEquipamentos, 'op-horas': hookOpHoras,
-        'alm-estoque': hookAlmEstoque, 'alm-pedidos': hookAlmPedidos,
-        'alm-rastreio': hookAlmRastreio,
+        'alm-dashboard': hookAlmDashboard, 'alm-estoque': hookAlmEstoque,
+        'alm-pedidos': hookAlmPedidos, 'alm-rastreio': hookAlmRastreio,
         'sup-projetos': hookSupProjetos, 'sup-modelos': hookSupModelos,
         'adm-dashboard': hookAdmDashboard, 'adm-funcionarios': hookAdmFuncionarios,
         'adm-documentos': hookAdmDocumentos, 'adm-relatorios': hookAdmRelatorios
@@ -686,16 +686,35 @@ function hookOpHoras() {
 function viewAlmDashboard() {
     const total = DB.ferramentas.length;
     const emUso = DB.ferramentas.filter(f => f.status === 'em-uso').length;
-    const estoque = DB.ferramentas.filter(f => f.status === 'estoque').length;
+    // Soma as UNIDADES disponíveis (e não a contagem de itens): assim,
+    // editar a quantidade de um item no Inventário reflete aqui na hora
+    const unidadesEstoque = DB.ferramentas.reduce((s, f) => s + f.estoque, 0);
     const baixoEstoque = DB.ferramentas.filter(f => f.estoque < f.estoqueMin);
     const pendentes = DB.pedidosMaterial.filter(p => p.status === 'pendente').length;
 
     return `
     <div class="cards-grid">
-        ${statCard('', '🗃️', 'Total de Ferramentas', total, 'itens patrimoniados')}
-        ${statCard('yellow', '👷', 'Em Uso', emUso, 'em cautela com funcionários')}
-        ${statCard('green', '✅', 'No Estoque', estoque, 'disponíveis para retirada')}
-        ${statCard('red', '🚨', 'Baixo Estoque', baixoEstoque.length, 'abaixo do mínimo')}
+        ${statCard('', '🗃️', 'Itens Cadastrados', total, 'tipos de ferramentas/materiais')}
+        ${statCard('yellow', '👷', 'Em Uso', emUso, 'cautelas com funcionários')}
+        ${statCard('green', '✅', 'Unidades no Estoque', unidadesEstoque, 'somando todos os itens')}
+        ${statCard('red', '🚨', 'Baixo Estoque', baixoEstoque.length, 'itens abaixo do mínimo')}
+    </div>
+
+    <!-- Fila de pedidos em destaque, ACIMA da tabela de baixo estoque -->
+    <div class="panel cta-panel ${pendentes ? 'cta-alerta' : ''}">
+        <div class="cta-content">
+            <div class="cta-icon">${pendentes ? '📥' : '🎉'}</div>
+            <div>
+                <h3>${pendentes
+                    ? `${pendentes} pedido(s) aguardando sua análise`
+                    : 'Nenhum pedido pendente'}</h3>
+                <p class="cta-sub">${pendentes
+                    ? 'As equipes em campo estão aguardando a liberação dos materiais.'
+                    : 'Todos os pedidos das equipes já foram analisados.'}</p>
+            </div>
+        </div>
+        <button class="btn ${pendentes ? 'btn-primary' : 'btn-ghost'}" data-goto-view="alm-pedidos">
+            Analisar Pedidos →</button>
     </div>
 
     ${baixoEstoque.length ? `
@@ -708,12 +727,11 @@ function viewAlmDashboard() {
                 <td><span class="badge badge-red">Repor ${f.estoqueMin - f.estoque} un</span></td></tr>`).join('')}
             </tbody>
         </table></div>
-    </div>` : ''}
-
-    <div class="panel">
-        <div class="panel-header"><h3>📥 Fila de Pedidos</h3></div>
-        <p style="font-size:13.5px">Existem <strong>${pendentes}</strong> pedido(s) aguardando análise em <strong>Gestão de Pedidos</strong>.</p>
-    </div>`;
+    </div>` : ''}`;
+}
+function hookAlmDashboard() {
+    document.querySelectorAll('[data-goto-view]').forEach(b =>
+        b.addEventListener('click', () => navigate(b.dataset.gotoView)));
 }
 
 /* --- 7.1 Inventário (CRUD de estoque com filtros) ------------------ */
@@ -1150,6 +1168,9 @@ function hookSupModelos() {
 function viewAdmDashboard() {
     const custoTotal = DB.obras.reduce((s, o) => s + o.custoTotal, 0);
     const orcamentoTotal = DB.obras.reduce((s, o) => s + o.orcamento, 0);
+    const pctUsado = Math.round(custoTotal / orcamentoTotal * 100);
+    const resultado = orcamentoTotal - custoTotal; // lucro (+) ou prejuízo (−) estimado
+    const obrasEstouradas = DB.obras.filter(o => o.custoTotal > o.orcamento);
     const ativos = DB.funcionarios.filter(f => f.ativo);
     const folha = ativos.reduce((s, f) => s + f.valorHora * 220, 0); // estimativa 220h/mês
     const hoje = new Date('2026-07-10');
@@ -1159,48 +1180,106 @@ function viewAdmDashboard() {
     }).length;
 
     return `
+    ${obrasEstouradas.length ? `
+    <div class="alerta-banner">🚨
+        <div><strong>Atenção:</strong> ${obrasEstouradas.map(o =>
+            `a obra <strong>${o.nome}</strong> estourou o orçamento em <strong>${brl(o.custoTotal - o.orcamento)}</strong>`
+        ).join('; ')}. Veja os detalhes na aba <strong>Obras</strong>.</div>
+    </div>` : ''}
+
     <div class="cards-grid">
-        ${statCard('', '💼', 'Custo Realizado (Obras)', brlK(custoTotal), 'de ' + brlK(orcamentoTotal) + ' orçados')}
+        ${statCard('', '💼', 'Custo Realizado (Obras)', brlK(custoTotal), pctUsado + '% do orçamento de ' + brlK(orcamentoTotal))}
+        ${statCard(resultado >= 0 ? 'green' : 'red', resultado >= 0 ? '📈' : '📉',
+            'Resultado Estimado', (resultado < 0 ? '−' : '') + brlK(Math.abs(resultado)),
+            obrasEstouradas.length ? obrasEstouradas.length + ' obra(s) com estouro de orçamento' : 'orçado − realizado, todas as obras')}
         ${statCard('red', '🧾', 'Folha Mensal Estimada', brlK(folha), 'base 220h/funcionário')}
-        ${statCard('green', '👥', 'Funcionários Ativos', ativos.length)}
-        ${statCard('', '🏗️', 'Obras em Andamento', DB.obras.length)}
+        ${statCard('', '👥', 'Funcionários Ativos', ativos.length)}
         ${statCard('yellow', '📁', 'Documentos em Alerta', docsAlerta, 'vencidos ou vencendo em 30 dias')}
     </div>
     <div class="charts-grid">
         <div class="panel"><div class="panel-header"><h3>💰 Custos por Obra — Orçado × Realizado</h3></div>
             <div class="chart-box"><canvas id="chart-custos"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><h3>📊 Lucro / Prejuízo Estimado por Obra</h3></div>
+            <div class="chart-box"><canvas id="chart-resultado"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><h3>👤 Custo Mensal por Funcionário (Jul/26)</h3></div>
+            <div class="chart-box"><canvas id="chart-funcionarios"></canvas></div></div>
         <div class="panel"><div class="panel-header"><h3>⏱️ Horas Trabalhadas — Últimos 6 Meses</h3></div>
             <div class="chart-box"><canvas id="chart-horas"></canvas></div></div>
         <div class="panel"><div class="panel-header"><h3>👥 Distribuição da Equipe por Obra</h3></div>
             <div class="chart-box sm"><canvas id="chart-equipe"></canvas></div></div>
-        <div class="panel"><div class="panel-header"><h3>🧾 Custo Mensal de Folha por Função</h3></div>
-            <div class="chart-box sm"><canvas id="chart-folha"></canvas></div></div>
     </div>`;
 }
 function hookAdmDashboard() {
     /* >>> BACKEND <<< : os dados dos gráficos virão de
        GET /api/relatorios/custos-por-obra
+       GET /api/relatorios/resultado-por-obra
+       GET /api/relatorios/custo-por-funcionario?mes=2026-07
        GET /api/relatorios/horas-mensais?meses=6
-       GET /api/relatorios/equipe-por-obra
-       GET /api/relatorios/folha-por-funcao */
-    const AZUL = '#1b3f8f', AZUL_CLARO = '#8fa8d9', VERMELHO = '#c62828';
+       GET /api/relatorios/equipe-por-obra */
+    const AZUL = '#1b3f8f', AZUL_CLARO = '#8fa8d9', VERMELHO = '#c62828', VERDE = '#1e8e3e';
+    const eixoRS = { ticks: { callback: v => 'R$ ' + v / 1000 + 'k' }, grid: { color: '#eef0f6' } };
 
+    // 1. Orçado × Realizado — a barra do realizado fica VERMELHA quando estoura o orçamento
     charts.custos = new Chart($('#chart-custos'), {
         type: 'bar',
         data: {
             labels: DB.obras.map(o => o.nome),
             datasets: [
                 { label: 'Orçado',    data: DB.obras.map(o => o.orcamento),  backgroundColor: AZUL_CLARO, borderRadius: 6 },
-                { label: 'Realizado', data: DB.obras.map(o => o.custoTotal), backgroundColor: AZUL,       borderRadius: 6 }
+                { label: 'Realizado', data: DB.obras.map(o => o.custoTotal),
+                  backgroundColor: DB.obras.map(o => o.custoTotal > o.orcamento ? VERMELHO : AZUL), borderRadius: 6 }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            scales: { y: { ticks: { callback: v => 'R$ ' + v / 1000 + 'k' }, grid: { color: '#eef0f6' } },
-                      x: { grid: { display: false } } }
+            scales: { y: eixoRS, x: { grid: { display: false } } }
         }
     });
 
+    // 2. Lucro/Prejuízo por obra (orçado − realizado): verde = lucro, vermelho = prejuízo
+    const resultados = DB.obras.map(o => o.orcamento - o.custoTotal);
+    charts.resultado = new Chart($('#chart-resultado'), {
+        type: 'bar',
+        data: {
+            labels: DB.obras.map(o => o.nome),
+            datasets: [{
+                data: resultados,
+                backgroundColor: resultados.map(v => v >= 0 ? VERDE : VERMELHO),
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx =>
+                    (ctx.raw >= 0 ? 'Lucro estimado: ' : 'Prejuízo: ') + brl(Math.abs(ctx.raw)) } }
+            },
+            scales: { y: eixoRS, x: { grid: { display: false } } }
+        }
+    });
+
+    // 3. Custo mensal por FUNCIONÁRIO (identifica quem pesa mais na folha)
+    const ativos = DB.funcionarios.filter(f => f.ativo);
+    const custoFunc = ativos
+        .map(f => ({ nome: f.nome, custo: (160 + (f.id * 7) % 40) * f.valorHora }))
+        .sort((a, b) => b.custo - a.custo);
+    charts.funcionarios = new Chart($('#chart-funcionarios'), {
+        type: 'bar',
+        data: {
+            labels: custoFunc.map(f => f.nome),
+            datasets: [{ data: custoFunc.map(f => f.custo), backgroundColor: AZUL, borderRadius: 6 }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false },
+                       tooltip: { callbacks: { label: ctx => brl(ctx.raw) + ' no mês' } } },
+            scales: { x: eixoRS, y: { grid: { display: false } } }
+        }
+    });
+
+    // 4. Horas — últimos 6 meses
     charts.horas = new Chart($('#chart-horas'), {
         type: 'line',
         data: {
@@ -1221,7 +1300,7 @@ function hookAdmDashboard() {
         }
     });
 
-    const ativos = DB.funcionarios.filter(f => f.ativo);
+    // 5. Distribuição da equipe por obra
     charts.equipe = new Chart($('#chart-equipe'), {
         type: 'doughnut',
         data: {
@@ -1234,26 +1313,6 @@ function hookAdmDashboard() {
         },
         options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
                    plugins: { legend: { position: 'right' } } }
-    });
-
-    const porFuncao = {};
-    ativos.forEach(f => {
-        const chave = f.funcao.split(' ')[0]; // agrupa: Eletricista, Ajudante, ...
-        porFuncao[chave] = (porFuncao[chave] || 0) + f.valorHora * 220;
-    });
-    charts.folha = new Chart($('#chart-folha'), {
-        type: 'bar',
-        data: {
-            labels: Object.keys(porFuncao),
-            datasets: [{ data: Object.values(porFuncao), backgroundColor: AZUL, borderRadius: 6 }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { ticks: { callback: v => 'R$ ' + v / 1000 + 'k' }, grid: { color: '#eef0f6' } },
-                      y: { grid: { display: false } } }
-        }
     });
 }
 
@@ -1268,6 +1327,7 @@ function viewAdmObras() {
             const consumo = Math.round(o.custoTotal / o.orcamento * 100);
             const corConsumo = consumo >= 90 ? 'red' : consumo >= 70 ? 'yellow' : 'green';
             const diasRestantes = Math.round((new Date(o.prazo) - hoje) / 86400000);
+            const resultado = o.orcamento - o.custoTotal; // lucro (+) ou prejuízo (−)
             return `
             <div class="obra-card">
                 <div class="obra-head">
@@ -1282,6 +1342,10 @@ function viewAdmObras() {
                 <div class="obra-prog-row" style="margin-top:12px"><span>Orçamento consumido</span>
                     <span>${brlK(o.custoTotal)} / ${brlK(o.orcamento)} (${consumo}%)</span></div>
                 <div class="progress"><div class="progress-fill ${corConsumo}" style="width:${Math.min(consumo, 100)}%"></div></div>
+
+                ${resultado >= 0
+                    ? `<div class="resultado-obra positivo">💰 Lucro estimado: <strong>${brl(resultado)}</strong></div>`
+                    : `<div class="resultado-obra negativo">🚨 Orçamento estourado — prejuízo de <strong>${brl(-resultado)}</strong></div>`}
 
                 <div class="obra-metricas">
                     <div><span class="m-label">Equipe</span><span class="m-value">${equipe.length} 👷</span></div>

@@ -419,6 +419,55 @@ tfoot td { padding: 12px; font-weight: 700; border-top: 1px solid var(--line); }
 }
 .search-input { min-width: 230px; }
 
+/* Painel de chamada para ação (ex: fila de pedidos do almoxarifado) */
+.cta-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.cta-content { display: flex; align-items: center; gap: 14px; }
+.cta-icon {
+    width: 52px; height: 52px; flex-shrink: 0;
+    border-radius: 15px;
+    background: var(--azul-50);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+}
+.cta-panel h3 { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
+.cta-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.cta-alerta {
+    background: linear-gradient(100deg, var(--amarelo-50), #fff 65%);
+    border-color: #efe3c2;
+}
+.cta-alerta .cta-icon { background: var(--amarelo-50); }
+
+/* Banner de alerta de prejuízo (Admin) */
+.alerta-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--vermelho-50);
+    border: 1px solid #f3caca;
+    color: #7f1d1d;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+/* Lucro/prejuízo estimado no card de obra */
+.resultado-obra {
+    margin-top: 12px;
+    padding: 9px 13px;
+    border-radius: 10px;
+    font-size: 12.5px;
+}
+.resultado-obra.positivo { background: var(--verde-50); color: var(--verde); }
+.resultado-obra.negativo { background: var(--vermelho-50); color: var(--vermelho); }
+
 /* Barra de progresso */
 .progress {
     height: 8px;
@@ -730,6 +779,10 @@ tfoot td { padding: 12px; font-weight: 700; border-top: 1px solid var(--line); }
     }
     .modal-actions { flex-direction: column-reverse; }
     .modal-actions .btn { width: 100%; padding: 13px; }
+
+    /* CTA da fila de pedidos empilha e o botão ocupa a largura toda */
+    .cta-panel { flex-direction: column; align-items: stretch; }
+    .cta-panel .btn { width: 100%; }
 
     /* Galerias e cards em coluna única, botões de largura total */
     .gallery-grid { grid-template-columns: 1fr !important; }
