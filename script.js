@@ -77,17 +77,139 @@ const DB = {
         { data: '2026-07-09', entrada: '07:00', saida: '19:00', normais: 8, extras50: 3, obraId: 2 }
     ],
 
-    /* Modelos de documentos prontos (baixados em PDF e editados
-       pela equipe em Word/Excel) */
-    modelosDocumentos: [
-        { id: 'MOD-APR',  icon: '⚠️', nome: 'APR — Análise Preliminar de Risco',   desc: 'Preenchida antes de cada atividade de risco. Campos de perigos, controles e equipe.' },
-        { id: 'MOD-RDO',  icon: '📝', nome: 'RDO — Relatório Diário de Obra',      desc: 'Efetivo do dia, atividades executadas, clima e ocorrências.' },
-        { id: 'MOD-PT',   icon: '🔥', nome: 'PT — Permissão de Trabalho',          desc: 'Liberação para trabalho a quente, altura ou espaço confinado.' },
-        { id: 'MOD-NR10', icon: '⚡', nome: 'Checklist NR-10 — Serviços Elétricos', desc: 'Verificação de desenergização, EPIs e sinalização.' },
-        { id: 'MOD-NR35', icon: '🪜', nome: 'Checklist NR-35 — Trabalho em Altura', desc: 'Inspeção de cintos, ancoragens e linha de vida.' },
-        { id: 'MOD-DDS',  icon: '🗣️', nome: 'DDS — Diálogo Diário de Segurança',   desc: 'Registro do tema abordado e lista de presença da equipe.' },
-        { id: 'MOD-MED',  icon: '📐', nome: 'Boletim de Medição',                  desc: 'Medição mensal de serviços executados para faturamento.' },
-        { id: 'MOD-CAU',  icon: '🔧', nome: 'Termo de Cautela de Ferramentas',     desc: 'Registro de entrega e devolução de ferramentas ao colaborador.' }
+    /* ------------------------------------------------------------
+       MODELOS DE DOCUMENTOS PREENCHÍVEIS
+       Cada categoria pode ter vários modelos-base (ex: APR tem 4).
+       O usuário preenche os campos (caixinhas) e cada salvamento
+       cria uma RAMIFICAÇÃO (versão) do modelo principal.
+       Tipos de campo: 'texto' | 'textarea' | 'checks' (múltipla escolha)
+       ------------------------------------------------------------ */
+    categoriasModelos: [
+        { id: 'APR',  icon: '⚠️', nome: 'APR — Análise Preliminar de Risco', desc: 'Vários modelos por tipo de risco: altura, elétrico, confinado e içamento.' },
+        { id: 'RDO',  icon: '📝', nome: 'RDO — Relatório Diário de Obra',    desc: 'Efetivo do dia, atividades executadas, clima e ocorrências.' },
+        { id: 'PT',   icon: '🔥', nome: 'PT — Permissão de Trabalho',        desc: 'Liberação para trabalho a quente, altura ou espaço confinado.' },
+        { id: 'NR10', icon: '⚡', nome: 'Checklist NR-10 — Elétrica',        desc: 'Verificação de desenergização, EPIs e sinalização.' },
+        { id: 'NR35', icon: '🪜', nome: 'Checklist NR-35 — Altura',          desc: 'Inspeção de cintos, ancoragens e linha de vida.' },
+        { id: 'DDS',  icon: '🗣️', nome: 'DDS — Diálogo Diário de Segurança', desc: 'Registro do tema abordado e presença da equipe.' },
+        { id: 'MED',  icon: '📐', nome: 'Boletim de Medição',                desc: 'Medição mensal de serviços executados para faturamento.' },
+        { id: 'CAU',  icon: '🔧', nome: 'Termo de Cautela de Ferramentas',   desc: 'Registro de entrega e devolução de ferramentas.' }
+    ],
+
+    modelosBase: [
+        { id: 'APR-ALT', categoriaId: 'APR', nome: 'APR — Trabalho em Altura', campos: [
+            { id: 'local',       label: 'Nome do Local / Área',   tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data da Atividade',      tipo: 'texto' },
+            { id: 'responsavel', label: 'Responsável',            tipo: 'texto' },
+            { id: 'equipe',      label: 'Equipe Envolvida',       tipo: 'texto' },
+            { id: 'riscos',      label: 'Riscos Identificados',   tipo: 'checks', opcoes: ['Queda de altura', 'Queda de materiais', 'Choque elétrico', 'Superfície instável', 'Condições climáticas'] },
+            { id: 'epis',        label: 'EPIs Obrigatórios',      tipo: 'checks', opcoes: ['Cinto paraquedista', 'Talabarte duplo', 'Capacete com jugular', 'Linha de vida', 'Luvas de vaqueta'] },
+            { id: 'controles',   label: 'Medidas de Controle',    tipo: 'textarea' }
+        ]},
+        { id: 'APR-ELE', categoriaId: 'APR', nome: 'APR — Serviços Elétricos Energizados', campos: [
+            { id: 'local',       label: 'Nome do Local / Painel', tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data da Atividade',      tipo: 'texto' },
+            { id: 'responsavel', label: 'Responsável',            tipo: 'texto' },
+            { id: 'tensao',      label: 'Nível de Tensão',        tipo: 'texto' },
+            { id: 'riscos',      label: 'Riscos Identificados',   tipo: 'checks', opcoes: ['Choque elétrico', 'Arco elétrico', 'Queimaduras', 'Incêndio', 'Campos eletromagnéticos'] },
+            { id: 'epis',        label: 'EPIs Obrigatórios',      tipo: 'checks', opcoes: ['Luva isolante classe 0', 'Capacete classe B', 'Vestimenta FR (NR-10)', 'Óculos de proteção', 'Tapete isolante'] },
+            { id: 'controles',   label: 'Medidas de Controle',    tipo: 'textarea' }
+        ]},
+        { id: 'APR-CONF', categoriaId: 'APR', nome: 'APR — Espaço Confinado', campos: [
+            { id: 'local',       label: 'Nome do Local / Espaço', tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data da Atividade',      tipo: 'texto' },
+            { id: 'responsavel', label: 'Responsável',            tipo: 'texto' },
+            { id: 'vigia',       label: 'Vigia Designado',        tipo: 'texto' },
+            { id: 'riscos',      label: 'Riscos Identificados',   tipo: 'checks', opcoes: ['Deficiência de oxigênio', 'Gases tóxicos', 'Inundação', 'Soterramento', 'Explosão'] },
+            { id: 'medicoes',    label: 'Medições Realizadas',    tipo: 'checks', opcoes: ['O₂ dentro do limite', 'LEL abaixo de 10%', 'CO abaixo do limite', 'H₂S abaixo do limite'] },
+            { id: 'controles',   label: 'Medidas de Controle',    tipo: 'textarea' }
+        ]},
+        { id: 'APR-ICA', categoriaId: 'APR', nome: 'APR — Içamento de Cargas', campos: [
+            { id: 'local',       label: 'Nome do Local / Área',   tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data da Atividade',      tipo: 'texto' },
+            { id: 'responsavel', label: 'Responsável / Sinaleiro', tipo: 'texto' },
+            { id: 'carga',       label: 'Carga e Peso Estimado',  tipo: 'texto' },
+            { id: 'riscos',      label: 'Riscos Identificados',   tipo: 'checks', opcoes: ['Queda de carga', 'Esmagamento', 'Tombamento do equipamento', 'Rede elétrica próxima', 'Vento forte'] },
+            { id: 'equipamentos', label: 'Equipamentos de Içamento', tipo: 'checks', opcoes: ['Cintas inspecionadas', 'Manilhas certificadas', 'Guincho/Tirfor OK', 'Área isolada'] },
+            { id: 'controles',   label: 'Medidas de Controle',    tipo: 'textarea' }
+        ]},
+        { id: 'RDO-PAD', categoriaId: 'RDO', nome: 'RDO — Relatório Diário de Obra', campos: [
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data',                   tipo: 'texto' },
+            { id: 'efetivo',     label: 'Efetivo em Campo',       tipo: 'texto' },
+            { id: 'clima',       label: 'Condições Climáticas',   tipo: 'checks', opcoes: ['Sol', 'Nublado', 'Chuva', 'Impraticável'] },
+            { id: 'atividades',  label: 'Atividades Executadas',  tipo: 'textarea' },
+            { id: 'ocorrencias', label: 'Ocorrências / Impedimentos', tipo: 'textarea' }
+        ]},
+        { id: 'PT-PAD', categoriaId: 'PT', nome: 'PT — Permissão de Trabalho', campos: [
+            { id: 'local',       label: 'Nome do Local / Área',   tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data',                   tipo: 'texto' },
+            { id: 'validade',    label: 'Validade da Permissão',  tipo: 'texto' },
+            { id: 'emitente',    label: 'Emitente',               tipo: 'texto' },
+            { id: 'tipos',       label: 'Tipo de Trabalho',       tipo: 'checks', opcoes: ['Trabalho a quente', 'Trabalho em altura', 'Espaço confinado', 'Elétrica energizada', 'Escavação'] },
+            { id: 'controles',   label: 'Requisitos de Segurança', tipo: 'textarea' }
+        ]},
+        { id: 'NR10-PAD', categoriaId: 'NR10', nome: 'Checklist NR-10 — Serviços Elétricos', campos: [
+            { id: 'local',       label: 'Nome do Local / Painel', tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data',                   tipo: 'texto' },
+            { id: 'executante',  label: 'Executante',             tipo: 'texto' },
+            { id: 'itens',       label: 'Itens Verificados',      tipo: 'checks', opcoes: ['Desenergização confirmada', 'Ausência de tensão testada', 'Aterramento temporário instalado', 'Sinalização e bloqueio (LOTO)', 'EPIs inspecionados'] },
+            { id: 'obs',         label: 'Observações',            tipo: 'textarea' }
+        ]},
+        { id: 'NR35-PAD', categoriaId: 'NR35', nome: 'Checklist NR-35 — Trabalho em Altura', campos: [
+            { id: 'local',       label: 'Nome do Local / Área',   tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data',                   tipo: 'texto' },
+            { id: 'executante',  label: 'Executante',             tipo: 'texto' },
+            { id: 'itens',       label: 'Itens Verificados',      tipo: 'checks', opcoes: ['Cinto inspecionado', 'Talabarte sem desgaste', 'Ancoragem certificada', 'Linha de vida instalada', 'Área inferior isolada'] },
+            { id: 'obs',         label: 'Observações',            tipo: 'textarea' }
+        ]},
+        { id: 'DDS-PAD', categoriaId: 'DDS', nome: 'DDS — Diálogo Diário de Segurança', campos: [
+            { id: 'obra',          label: 'Obra',                 tipo: 'texto' },
+            { id: 'dataAtv',       label: 'Data',                 tipo: 'texto' },
+            { id: 'tema',          label: 'Tema Abordado',        tipo: 'texto' },
+            { id: 'instrutor',     label: 'Instrutor',            tipo: 'texto' },
+            { id: 'participantes', label: 'Participantes',        tipo: 'textarea' }
+        ]},
+        { id: 'MED-PAD', categoriaId: 'MED', nome: 'Boletim de Medição', campos: [
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'periodo',     label: 'Período de Medição',     tipo: 'texto' },
+            { id: 'respMed',     label: 'Responsável pela Medição', tipo: 'texto' },
+            { id: 'servicos',    label: 'Serviços Executados',    tipo: 'textarea' },
+            { id: 'quantidades', label: 'Quantidades Medidas',    tipo: 'textarea' }
+        ]},
+        { id: 'CAU-PAD', categoriaId: 'CAU', nome: 'Termo de Cautela de Ferramentas', campos: [
+            { id: 'funcionario', label: 'Funcionário',            tipo: 'texto' },
+            { id: 'obra',        label: 'Obra',                   tipo: 'texto' },
+            { id: 'dataAtv',     label: 'Data da Entrega',        tipo: 'texto' },
+            { id: 'ferramentas', label: 'Ferramentas Entregues',  tipo: 'textarea' },
+            { id: 'estado',      label: 'Estado de Conservação',  tipo: 'checks', opcoes: ['Novo', 'Bom', 'Com desgaste'] },
+            { id: 'respEntrega', label: 'Responsável pela Entrega', tipo: 'texto' }
+        ]}
+    ],
+
+    /* Ramificações (versões editadas) dos modelos.
+       origem = de onde a edição partiu (modelo original ou outra versão) */
+    versoesDocumentos: [
+        { id: 'VER-001', modeloId: 'APR-ALT', nome: 'APR Altura — Leito +12m (Sylvamo)',
+          autorId: 8, data: '2026-07-06', origem: 'Modelo original',
+          valores: { local: 'Mezanino área utilidades', obra: 'Sylvamo', dataAtv: '06/07/2026',
+                     responsavel: 'Lucas Bento', equipe: 'Rafael Costa, Marcos Andrade',
+                     riscos: ['Queda de altura', 'Queda de materiais'],
+                     epis: ['Cinto paraquedista', 'Talabarte duplo', 'Capacete com jugular'],
+                     controles: 'Isolamento da área inferior, linha de vida instalada e inspecionada antes do início.' } },
+        { id: 'VER-002', modeloId: 'APR-ALT', nome: 'APR Altura — Leito +12m rev.2',
+          autorId: 8, data: '2026-07-09', origem: 'APR Altura — Leito +12m (Sylvamo)',
+          valores: { local: 'Mezanino área utilidades — trecho B', obra: 'Sylvamo', dataAtv: '09/07/2026',
+                     responsavel: 'Lucas Bento', equipe: 'Rafael Costa, Marcos Andrade, André Oliveira',
+                     riscos: ['Queda de altura', 'Queda de materiais', 'Condições climáticas'],
+                     epis: ['Cinto paraquedista', 'Talabarte duplo', 'Capacete com jugular', 'Linha de vida'],
+                     controles: 'Isolamento ampliado; atividade suspensa em caso de chuva.' } }
     ],
 
     /* Documentação da empresa (Admin) — contratos, ARTs, certificados */
@@ -1120,46 +1242,313 @@ function hookSupProjetos() {
     });
 }
 
-/* --- 8.1 Modelos e Documentos (download de modelos prontos) -------- */
+/* --- 8.1 Modelos de Documentos preenchíveis + ramificações ----------
+   Navegação em 3 níveis:
+     1) Categorias (APR, RDO, PT...)  →  2) Modelos da categoria
+     (APR tem 4)  →  3) Detalhe: modelo original + ramificações.
+   Editar (o original ou uma versão) abre um formulário com os campos
+   do documento; salvar SEMPRE cria uma nova ramificação. */
+const modelosNav = { categoriaId: null, modeloId: null };
+
+const modelosDaCategoria = (catId) => DB.modelosBase.filter(m => m.categoriaId === catId);
+const versoesDoModelo = (modId) => DB.versoesDocumentos.filter(v => v.modeloId === modId);
+
 function viewSupModelos() {
+    modelosNav.categoriaId = null;
+    modelosNav.modeloId = null;
+    return `<div id="modelos-container">${renderModelos()}</div>`;
+}
+function hookSupModelos() { bindModelos(); }
+function refreshModelos() {
+    const c = $('#modelos-container');
+    if (c) { c.innerHTML = renderModelos(); bindModelos(); }
+}
+
+function renderModelos() {
+    if (modelosNav.modeloId) return renderDetalheModelo();
+    if (modelosNav.categoriaId) return renderListaModelos();
+    return renderCategoriasModelos();
+}
+
+/* Nível 1 — categorias */
+function renderCategoriasModelos() {
     return `
     <div class="panel">
         <div class="panel-header">
-            <div><h3>Modelos Prontos — APR, RDO e Segurança</h3>
-            <div class="panel-sub">Baixe o modelo em PDF e edite no Word/Excel conforme a atividade</div></div>
+            <div><h3>Modelos de Documentos</h3>
+            <div class="panel-sub">Baixe o modelo em branco ou preencha os campos e salve ramificações do original</div></div>
         </div>
         <div class="gallery-grid" style="grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))">
-            ${DB.modelosDocumentos.map(m => `
-            <div class="doc-card">
-                <div class="doc-icon">${m.icon}</div>
-                <div class="doc-body">
-                    <strong>${m.nome}</strong>
-                    <p>${m.desc}</p>
-                    <button class="btn btn-primary btn-sm" data-baixar-modelo="${m.id}">⬇ Baixar Modelo (PDF)</button>
-                </div>
-            </div>`).join('')}
+            ${DB.categoriasModelos.map(c => {
+                const modelos = modelosDaCategoria(c.id);
+                const versoes = modelos.reduce((s, m) => s + versoesDoModelo(m.id).length, 0);
+                return `
+                <div class="doc-card clicavel" data-abrir-categoria="${c.id}">
+                    <div class="doc-icon">${c.icon}</div>
+                    <div class="doc-body">
+                        <strong>${c.nome}</strong>
+                        <p>${c.desc}</p>
+                        <span class="badge badge-blue no-dot">${modelos.length} modelo(s)</span>
+                        ${versoes ? ` <span class="badge badge-green no-dot">${versoes} ramificação(ões)</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('')}
         </div>
     </div>`;
 }
-function hookSupModelos() {
-    document.querySelectorAll('[data-baixar-modelo]').forEach(b =>
-        b.addEventListener('click', () => {
-            /* >>> BACKEND <<< : GET /api/modelos/{id}/download
-               (o PDF real do modelo ficará armazenado no servidor) */
-            const m = DB.modelosDocumentos.find(x => x.id === b.dataset.baixarModelo);
-            gerarPDF(m.id + '.pdf', m.nome, [
-                'Obra: ______________________________  Data: ____/____/______',
-                'Responsavel: _______________________________________________',
-                'Equipe: ____________________________________________________',
-                '',
-                'Descricao da atividade:',
-                '____________________________________________________________',
-                '____________________________________________________________',
-                '',
-                '(Modelo simulado - edite no Word/Excel apos o download)'
-            ]);
-            toast(`Modelo ${m.nome.split('—')[0].trim()} baixado.`, 'success');
+
+/* Nível 2 — modelos da categoria (ex: os 4 tipos de APR) */
+function renderListaModelos() {
+    const cat = DB.categoriasModelos.find(c => c.id === modelosNav.categoriaId);
+    return `
+    <button class="btn btn-ghost btn-sm btn-voltar" data-voltar-categorias>← Todas as categorias</button>
+    <div class="panel">
+        <div class="panel-header">
+            <div><h3>${cat.icon} ${cat.nome}</h3>
+            <div class="panel-sub">Selecione o modelo que deseja baixar ou editar</div></div>
+        </div>
+        ${modelosDaCategoria(cat.id).map(m => {
+            const nVer = versoesDoModelo(m.id).length;
+            return `
+            <div class="doc-row clicavel" data-abrir-modelo="${m.id}">
+                <div class="doc-icon">${cat.icon}</div>
+                <div class="doc-row-info">
+                    <strong>${m.nome}</strong>
+                    <small>${m.campos.length} campos preenchíveis${nVer ? ` · ${nVer} ramificação(ões)` : ''}</small>
+                </div>
+                <span class="badge badge-blue no-dot">Abrir →</span>
+            </div>`;
+        }).join('')}
+    </div>`;
+}
+
+/* Nível 3 — modelo original + suas ramificações */
+function renderDetalheModelo() {
+    const modelo = DB.modelosBase.find(m => m.id === modelosNav.modeloId);
+    const cat = DB.categoriasModelos.find(c => c.id === modelo.categoriaId);
+    const versoes = versoesDoModelo(modelo.id);
+    const multiplos = modelosDaCategoria(cat.id).length > 1;
+    return `
+    <button class="btn btn-ghost btn-sm btn-voltar" ${multiplos ? 'data-voltar-modelos' : 'data-voltar-categorias'}>
+        ← ${multiplos ? cat.nome : 'Todas as categorias'}</button>
+    <div class="panel">
+        <div class="panel-header">
+            <div><h3>${cat.icon} ${modelo.nome}</h3>
+            <div class="panel-sub">Baixe o original em branco, ou edite os campos para criar uma ramificação</div></div>
+        </div>
+
+        <div class="doc-row destaque">
+            <div class="doc-icon">📄</div>
+            <div class="doc-row-info">
+                <strong>${modelo.nome} <span class="badge badge-blue no-dot">Modelo original</span></strong>
+                <small>Documento em branco, com todos os campos vazios</small>
+            </div>
+            <div class="doc-row-acoes">
+                <button class="btn btn-ghost btn-sm" data-baixar-base="${modelo.id}">⬇ Baixar PDF</button>
+                <button class="btn btn-primary btn-sm" data-editar-base="${modelo.id}">✏️ Editar</button>
+            </div>
+        </div>
+
+        <div class="ramif-titulo">🌿 Ramificações deste modelo (${versoes.length})</div>
+        ${versoes.length ? versoes.map(v => `
+        <div class="doc-row">
+            <div class="doc-icon verde">📝</div>
+            <div class="doc-row-info">
+                <strong>${v.nome} <span class="badge badge-green no-dot">Editado</span></strong>
+                <small>por ${funcNome(v.autorId)} em ${dataBR(v.data)} · criado a partir de: ${v.origem}</small>
+            </div>
+            <div class="doc-row-acoes">
+                <button class="btn btn-ghost btn-sm" data-baixar-versao="${v.id}">⬇ Baixar PDF</button>
+                <button class="btn btn-primary btn-sm" data-editar-versao="${v.id}">✏️ Editar</button>
+                <button class="btn btn-ghost btn-sm" data-excluir-versao="${v.id}" style="color:var(--vermelho)">🗑</button>
+            </div>
+        </div>`).join('')
+        : '<p style="color:var(--muted);font-size:13px">Nenhuma ramificação ainda — clique em <strong>Editar</strong> no modelo original para criar a primeira.</p>'}
+    </div>`;
+}
+
+function bindModelos() {
+    document.querySelectorAll('[data-abrir-categoria]').forEach(el =>
+        el.addEventListener('click', () => {
+            modelosNav.categoriaId = el.dataset.abrirCategoria;
+            const modelos = modelosDaCategoria(modelosNav.categoriaId);
+            // Categoria com um único modelo vai direto para o detalhe
+            modelosNav.modeloId = modelos.length === 1 ? modelos[0].id : null;
+            refreshModelos();
         }));
+    document.querySelectorAll('[data-abrir-modelo]').forEach(el =>
+        el.addEventListener('click', () => {
+            modelosNav.modeloId = el.dataset.abrirModelo;
+            refreshModelos();
+        }));
+    const voltarCat = document.querySelector('[data-voltar-categorias]');
+    if (voltarCat) voltarCat.addEventListener('click', () => {
+        modelosNav.categoriaId = null; modelosNav.modeloId = null; refreshModelos();
+    });
+    const voltarMod = document.querySelector('[data-voltar-modelos]');
+    if (voltarMod) voltarMod.addEventListener('click', () => {
+        modelosNav.modeloId = null; refreshModelos();
+    });
+    document.querySelectorAll('[data-baixar-base]').forEach(b =>
+        b.addEventListener('click', (e) => { e.stopPropagation();
+            const m = DB.modelosBase.find(x => x.id === b.dataset.baixarBase);
+            baixarDocumentoPDF(m, null);
+        }));
+    document.querySelectorAll('[data-editar-base]').forEach(b =>
+        b.addEventListener('click', (e) => { e.stopPropagation();
+            abrirEditorDocumento(b.dataset.editarBase, null);
+        }));
+    document.querySelectorAll('[data-baixar-versao]').forEach(b =>
+        b.addEventListener('click', () => {
+            const v = DB.versoesDocumentos.find(x => x.id === b.dataset.baixarVersao);
+            baixarDocumentoPDF(DB.modelosBase.find(m => m.id === v.modeloId), v);
+        }));
+    document.querySelectorAll('[data-editar-versao]').forEach(b =>
+        b.addEventListener('click', () => {
+            const v = DB.versoesDocumentos.find(x => x.id === b.dataset.editarVersao);
+            abrirEditorDocumento(v.modeloId, v.id);
+        }));
+    document.querySelectorAll('[data-excluir-versao]').forEach(b =>
+        b.addEventListener('click', () => confirmarExclusaoVersao(b.dataset.excluirVersao)));
+}
+
+/* Editor: formulário com os campos (caixinhas) do documento.
+   Salvar SEMPRE cria uma nova ramificação do modelo principal. */
+function abrirEditorDocumento(modeloId, versaoId) {
+    const modelo = DB.modelosBase.find(m => m.id === modeloId);
+    const versaoOrigem = versaoId ? DB.versoesDocumentos.find(v => v.id === versaoId) : null;
+    const valores = versaoOrigem ? versaoOrigem.valores : {};
+    const nVer = versoesDoModelo(modeloId).length + 1;
+    const nomeSugerido = versaoOrigem
+        ? `${versaoOrigem.nome} — rev.`
+        : `${modelo.nome} (editado ${nVer})`;
+
+    const renderCampo = (c) => {
+        if (c.tipo === 'checks') return `
+            <div class="form-field full"><label>${c.label}</label>
+                <div class="check-group">
+                    ${c.opcoes.map(o => `
+                    <label class="check-pill">
+                        <input type="checkbox" data-campo-check="${c.id}" value="${o}"
+                            ${(valores[c.id] || []).includes(o) ? 'checked' : ''}> ${o}
+                    </label>`).join('')}
+                </div>
+            </div>`;
+        if (c.tipo === 'textarea') return `
+            <div class="form-field full"><label>${c.label}</label>
+                <textarea rows="2" data-campo-txt="${c.id}">${valores[c.id] || ''}</textarea>
+            </div>`;
+        return `
+            <div class="form-field"><label>${c.label}</label>
+                <input type="text" data-campo-txt="${c.id}" value="${valores[c.id] || ''}">
+            </div>`;
+    };
+
+    openModal(`
+        <h3>✏️ ${modelo.nome}</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 14px">
+            ${versaoOrigem ? `Editando a partir de: <strong>${versaoOrigem.nome}</strong>.` : 'Editando o modelo original.'}
+            Ao salvar, uma <strong>nova ramificação</strong> será criada.</p>
+        <div class="form-grid">
+            <div class="form-field full"><label>Nome desta ramificação *</label>
+                <input type="text" id="versao-nome" value="${nomeSugerido}"></div>
+            ${modelo.campos.map(renderCampo).join('')}
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar-versao">🌿 Salvar como Nova Ramificação</button>
+        </div>`);
+
+    $('#btn-salvar-versao').addEventListener('click', () => {
+        const nome = $('#versao-nome').value.trim();
+        if (!nome) return toast('Dê um nome para esta ramificação.', 'error');
+
+        const novosValores = {};
+        modelo.campos.forEach(c => {
+            if (c.tipo === 'checks') {
+                novosValores[c.id] = [...document.querySelectorAll(`input[data-campo-check="${c.id}"]:checked`)]
+                    .map(i => i.value);
+            } else {
+                novosValores[c.id] = ($(`[data-campo-txt="${c.id}"]`).value || '').trim();
+            }
+        });
+
+        /* >>> BACKEND <<<
+           await fetch(`/api/modelos/${modeloId}/versoes`, { method:'POST',
+               body: JSON.stringify({ nome, origemId: versaoId, valores: novosValores }) }) */
+        DB.versoesDocumentos.push({
+            id: 'VER-' + String(DB.versoesDocumentos.length + 1).padStart(3, '0'),
+            modeloId,
+            nome,
+            autorId: session.user.funcionarioId,
+            data: new Date().toISOString().slice(0, 10),
+            origem: versaoOrigem ? versaoOrigem.nome : 'Modelo original',
+            valores: novosValores
+        });
+        closeModal();
+        toast(`Ramificação "${nome}" criada!`, 'success');
+        refreshModelos();
+    });
+}
+
+function confirmarExclusaoVersao(id) {
+    const v = DB.versoesDocumentos.find(x => x.id === id);
+    openModal(`
+        <h3>🗑 Excluir Ramificação</h3>
+        <p style="font-size:13.5px">Excluir <strong>${v.nome}</strong>? O modelo original e as demais ramificações não são afetados.</p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-danger" id="btn-confirma-excluir-versao">Excluir</button>
+        </div>`);
+    $('#btn-confirma-excluir-versao').addEventListener('click', () => {
+        /* >>> BACKEND <<< : DELETE /api/versoes/{id} */
+        DB.versoesDocumentos.splice(DB.versoesDocumentos.indexOf(v), 1);
+        closeModal();
+        toast('Ramificação excluída.', 'success');
+        refreshModelos();
+    });
+}
+
+/* Gera o PDF do documento: em branco (versao = null) ou preenchido */
+function baixarDocumentoPDF(modelo, versao) {
+    /* >>> BACKEND <<< : GET /api/modelos/{id}/pdf  ou
+       GET /api/versoes/{id}/pdf (PDF real gerado pelo Python/ReportLab) */
+    const valores = versao ? versao.valores : {};
+    const quebrar = (s, n = 72) => {
+        const out = []; let t = String(s);
+        while (t.length > n) {
+            let i = t.lastIndexOf(' ', n);
+            if (i < 20) i = n;
+            out.push(t.slice(0, i)); t = t.slice(i).trim();
+        }
+        out.push(t); return out;
+    };
+
+    const linhas = [];
+    modelo.campos.forEach(c => {
+        if (c.tipo === 'checks') {
+            const sel = valores[c.id] || [];
+            linhas.push(c.label + ':');
+            for (let i = 0; i < c.opcoes.length; i += 2) {
+                linhas.push('    ' + c.opcoes.slice(i, i + 2)
+                    .map(o => `(${sel.includes(o) ? 'X' : '  '}) ${o}`).join('      '));
+            }
+        } else if (c.tipo === 'textarea') {
+            linhas.push(c.label + ':');
+            if (valores[c.id]) quebrar(valores[c.id]).forEach(l => linhas.push('    ' + l));
+            else { linhas.push('    ' + '_'.repeat(64)); linhas.push('    ' + '_'.repeat(64)); }
+        } else {
+            linhas.push(c.label + ': ' + (valores[c.id] || '_'.repeat(Math.max(10, 44 - c.label.length))));
+        }
+    });
+    linhas.push('');
+    linhas.push(versao
+        ? `Ramificacao: ${versao.nome} (${dataBR(versao.data)})`
+        : '(Modelo original em branco - preencha no sistema para gerar uma ramificacao)');
+
+    const arquivo = (versao ? versao.id : modelo.id) + '.pdf';
+    gerarPDF(arquivo, versao ? versao.nome : modelo.nome, linhas);
+    toast(`${arquivo} baixado.`, 'success');
 }
 
 /* ================================================================
